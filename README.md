@@ -1,2 +1,2 @@
 # GPU_ViT_Calcs
-Repositiory to store Calculations on GPU
+Repositiory to store ViT Calculations from GPU
