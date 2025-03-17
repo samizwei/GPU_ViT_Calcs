@@ -1,2 +1,2 @@
-# GPU_1d_Calcs
+# GPU_ViT_Calcs
 Repositiory to store Calculations on GPU
