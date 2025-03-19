@@ -1,6 +1,6 @@
 import os
-# os.environ['NETKET_EXPERIMENTAL_SHARDING'] = '1'
-# os.environ['NETKET_EXPERIMENTAL_FFT_AUTOCORRELATION'] = '1'
+os.environ['NETKET_EXPERIMENTAL_SHARDING'] = '1'
+os.environ['NETKET_EXPERIMENTAL_FFT_AUTOCORRELATION'] = '1'
 
 
 import netket as nk
@@ -40,12 +40,7 @@ Stopper2 = LateConvergenceStopping(target = 0.5, monitor = 'variance', patience 
 # In[57]:
 
 
-# alphas = [1., 2., 4., 8.]
-alphas = [8.]
-
-# try to only use 4 gpus instead of all eight
-# CUDA_VISIBLE_DEVICES=0,1,2,3 mpirun -np 4 python your_script.py
-# CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 mpirun -np 4 python RBM_diffAlphas.py
+alphas = [1., 2., 4., 8.]
 
 L = 6
 
@@ -87,7 +82,7 @@ p_opt = {
     # 'learning_rate': cosine_decay_schedule(init_value=1e-3, decay_steps = 100, alpha = 1e-2),
     'diag_shift': 1e-4,
     'n_samples': 2**12,
-    'chunk_size': 2**8,
+    'chunk_size': 2**12,
     'n_iter': 300,
 }
 

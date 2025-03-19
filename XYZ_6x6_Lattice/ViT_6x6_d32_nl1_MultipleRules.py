@@ -111,7 +111,7 @@ p_opt = {
 }
 
 pVit = {
-    'd': 32,
+    'd': 48,
     'h': 8,
     'nl': 1,
     'Dtype': jnp.float64,
