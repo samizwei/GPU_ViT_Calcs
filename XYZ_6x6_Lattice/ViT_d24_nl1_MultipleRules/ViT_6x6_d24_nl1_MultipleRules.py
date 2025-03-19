@@ -1,5 +1,5 @@
 import os
-# os.environ['NETKET_EXPERIMENTAL_SHARDING'] = '1'
+os.environ['NETKET_EXPERIMENTAL_SHARDING'] = '1'
 os.environ['NETKET_EXPERIMENTAL_FFT_AUTOCORRELATION'] = '1'
 
 
@@ -75,7 +75,7 @@ print(Ha16.hilbert)
 
 # print('E_0 =', nk.exact.lanczos_ed(Ha16, k=1, compute_eigenvectors=False))
 
-XX = Exchange_OP(hi2d, TriGraph)
+XX = Exchange_OP(hi2d, TriGraph).to_jax_operator()
 
 sa_Ha = nk.sampler.MetropolisHamiltonian(hilbert=hi2d, hamiltonian=XX, n_chains=32, sweep_size = 3* hi2d.size)
 # sa_2flip = nk.sampler.MetropolisSampler(hilbert=hi2d, rule=TwoLocalRule(), n_chains=32, sweep_size=3*hi2d.size)
@@ -123,7 +123,7 @@ pVit = {
 
 samplers = {
     # 'HaEx_5050': sa_HaEx5050,
-    'HaEx_3070': sa_HaEx3070,
+    # 'HaEx_3070': sa_HaEx3070,
     'HaEx_7030': sa_HaEx7030,
     # 'Hami':  sa_Ha,
 }
@@ -152,7 +152,7 @@ for _, sa_key in enumerate(samplers.keys()):
                 # # logger  = nk.logging.JsonLog(output_prefix=DataDir + log_file_name, save_params_every=10, saver_params=True)
     log_curr = nk.logging.RuntimeLog()
 
-    gs_Vit, vs_Vit = VMC_SR(hamiltonian=Ha16, sampler=samplers[sa_key], learning_rate=p_opt['learning_rate'], model=m_Vit,
+    gs_Vit, vs_Vit = VMC_SR(hamiltonian=Ha16.to_jax_operator(), sampler=samplers[sa_key], learning_rate=p_opt['learning_rate'], model=m_Vit,
                                             diag_shift=p_opt['diag_shift'], n_samples=p_opt['n_samples'], chunk_size = p_opt['chunk_size'], discards = 16)
                 
     StateLogger = PickledJsonLog(output_prefix=DataDir + 'log_vit_sampler_{}_nl2'.format(sa_key), save_params_every=10, save_params=True)
