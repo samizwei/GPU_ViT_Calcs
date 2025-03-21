@@ -1,0 +1,28 @@
+we perform VMC on 6x6 XYZ model with the following specifications:
+
+we first get some good initialized parameters such that generated samples have a small magnetization
+
+then we perform VMC with conjugate gradient and smooth_svd as solvers for SR:
+
+other infos:
+
+p_opt = {
+    'learning_rate' : linear_schedule(init_value=0.5 * 1e-3, end_value=1e-5, transition_begin=300, transition_steps=100),
+
+    'diag_shift': 0.0, 1e-4  # we use 0.0 diag shift when using smooth svd!!!!!!!
+    'n_samples': 2**12,
+    'chunk_size': 2**12,
+    'n_iter': 700,
+}
+
+pVit = {
+    'd': 24,
+    'h': 6,
+    'nl': 1,
+    'Dtype': jnp.float64,
+    'hidden_density': 1,
+    'L': L,
+    'Cx': 1,
+    'Cy': 2,
+    'patch_arr': HashableArray(np.arange(0, L**2).reshape((-1,2))),
+}

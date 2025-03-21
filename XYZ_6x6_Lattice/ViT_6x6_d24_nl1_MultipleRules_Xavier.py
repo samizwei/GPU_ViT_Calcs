@@ -11,6 +11,7 @@ import numpy as np
 
 import pickle
 from netket.callbacks import InvalidLossStopping
+import matplotlib.pyplot as plt
 # import the ViT model
 import sys
 sys.path.append('/scratch/samiz/GPU_ViT_Calcs/models')
@@ -20,8 +21,8 @@ from json_log import PickledJsonLog
 # from ViT_2d_Vers2_Checkpoint import *
 from vmc_2spins_sampler import *
 from Afm_Model_functions import *
-from ViTmodel_2d_Vers2 import * 
-# from optax.schedules import cosine_decay_schedule
+# from ViTmodel_2d_Vers2 import * 
+import ViT_2d_Vers3_XavierUniform as vitX
 
 from convergence_stopping import LateConvergenceStopping
 # import the sampler choosing between minSR and regular SR
@@ -111,8 +112,8 @@ p_opt = {
 }
 
 pVit = {
-    'd': 48,
-    'h': 8,
+    'd': 24,
+    'h': 6,
     'nl': 1,
     'Dtype': jnp.float64,
     'hidden_density': 1,
@@ -124,7 +125,6 @@ pVit = {
 
 
 samplers = {
-    'Ha': sa_Ha,
     'HaEx_7030': sa_HaEx7030,
     'HaEx_5050': sa_HaEx5050,
     'HaEx_3070': sa_HaEx3070,
@@ -134,32 +134,43 @@ samplers = {
 
 # print('everything worked so far!!')
 
-DataDir = 'ViT_d32_nl1_MultipleRules/'
+DataDir = 'ViT_d24_nl1_MultipleRules_XavierInit/'
 
 Stopper1 = InvalidLossStopping(monitor = 'mean', patience = 20)
 Stopper2 = LateConvergenceStopping(target = 0.5, monitor = 'variance', patience = 20, start_from_step=100)
 
+good_params = []
+# Load all pickle files with 'init' in the name and append their data to good_params
+with open(DataDir + 'good_init_params7030.pickle', 'rb') as f:
+    good_params.append(pickle.load(f))
+with open(DataDir + 'good_init_params5050.pickle', 'rb') as f:
+    good_params.append(pickle.load(f))
+with open(DataDir + 'good_init_params3070.pickle', 'rb') as f:
+    good_params.append(pickle.load(f))
 
 
-for _, sa_key in enumerate(samplers.keys()):
+
+for j, sa_key in enumerate(samplers.keys()):
 #     for _, dshift in enumerate(dshifts):
                 
     print('curr sampler:', samplers[sa_key])
 
 #                 # define the model
-    m_Vit =ViT_2d(patch_arr=HashableArray(pVit['patch_arr']), embed_dim=pVit['d'], num_heads=pVit['h'], nl=pVit['nl'],
+    m_Vit = vitX.ViT_2d(patch_arr=HashableArray(pVit['patch_arr']), embed_dim=pVit['d'], num_heads=pVit['h'], nl=pVit['nl'],
                                 Dtype=pVit['Dtype'], L=pVit['L'], Cx=pVit['Cx'], Cy=pVit['Cy'], hidden_density=pVit['hidden_density'])
                 
-        # # define the log and state file names
-    # log_file_name = 'log_XYZ_2d_vit_sampler{}_dshift{}'.format(sa_key, np.int32(1/dshift))
-                # state_file_name = 'params_XYZ_vit_patch_ampler{}_chains{}_Sweep{}_Ndiscard{}_Samples{}.pickle'.format(sa_key, Nchains, sweepSize, discard, p_opt['n_samples'])
-                # # logger  = nk.logging.JsonLog(output_prefix=DataDir + log_file_name, save_params_every=10, saver_params=True)
+    
     log_curr = nk.logging.RuntimeLog()
 
     gs_Vit, vs_Vit = VMC_SR(hamiltonian=Ha16.to_jax_operator(), sampler=samplers[sa_key], learning_rate=p_opt['learning_rate'], model=m_Vit,
-                                            diag_shift=p_opt['diag_shift'], n_samples=p_opt['n_samples'], chunk_size = p_opt['chunk_size'], discards = 16)
+                                            diag_shift=p_opt['diag_shift'], n_samples=p_opt['n_samples'], chunk_size = p_opt['chunk_size'], discards = 16,
+                                            parameters = good_params[j])
                 
     StateLogger = PickledJsonLog(output_prefix=DataDir + 'log_vit_sampler_{}'.format(sa_key), save_params_every=10, save_params=True)
+
+    x,y = np.unique(np.sum(vs_Vit.samples.reshape(-1, L**2), axis=-1)/2, return_counts=True)
+    print(x, '\n', y)
+    
     gs_Vit.run(out=(log_curr, StateLogger), n_iter=p_opt['n_iter'], callback=[grad_norms_callback, Stopper1, Stopper2])
 
     log_curr.serialize(DataDir + 'log_vit_sampler_{}'.format(sa_key)) 

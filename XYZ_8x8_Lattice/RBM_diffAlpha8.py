@@ -1,5 +1,5 @@
 import os
-# os.environ['NETKET_EXPERIMENTAL_SHARDING'] = '1'
+os.environ['NETKET_EXPERIMENTAL_SHARDING'] = '1'
 os.environ['NETKET_EXPERIMENTAL_FFT_AUTOCORRELATION'] = '1'
 
 
@@ -90,8 +90,8 @@ p_opt = {
     'learning_rate' : linear_schedule(init_value=1e-2, end_value=1e-4, transition_begin=80, transition_steps=60),
     # 'learning_rate': cosine_decay_schedule(init_value=1e-3, decay_steps = 100, alpha = 1e-2),
     'diag_shift': 1e-4,
-    'n_samples': 2**12,
-    'chunk_size': 2**12,
+    'n_samples': 2**10,
+    'chunk_size': 2**2,
     'n_iter': 300,
 }
 

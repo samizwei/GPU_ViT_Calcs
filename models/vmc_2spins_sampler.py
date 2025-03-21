@@ -14,13 +14,16 @@ additionally we define a sampler where we flip randomly two spins at the same ti
 
 
 
-def VMC_SR(hamiltonian, sampler, learning_rate, model, diag_shift, n_samples, discards = 5,  chunk_size=None, holomorph=False):
+def VMC_SR(hamiltonian, sampler, learning_rate, model, diag_shift, n_samples, discards = 5, solver= jax.scipy.sparse.linalg.cg,  chunk_size=None, holomorph=False, parameters = None):
 
     optimizer = nk.optimizer.Sgd(learning_rate)
     if chunk_size is None:
         chunk_size = n_samples
     
     vs = nk.vqs.MCState(sampler=sampler, model=model, n_samples=n_samples, chunk_size=chunk_size, n_discard_per_chain=discards)
+    if parameters is not None:
+        vs.variables = parameters
+
 
     # if chunk_size is None:
     #     vs = nk.vqs.MCState(sampler = sampler, model = model, n_samples = n_samples)
@@ -31,10 +34,10 @@ def VMC_SR(hamiltonian, sampler, learning_rate, model, diag_shift, n_samples, di
     # if n_samples * 3 < vs.n_parameters:
     if n_samples * 2 < vs.n_parameters:
         print('using min SR')
-        return VMC_SRt(hamiltonian=hamiltonian, optimizer=optimizer, variational_state=vs, diag_shift=diag_shift), vs
+        return VMC_SRt(hamiltonian=hamiltonian, optimizer=optimizer, variational_state=vs, diag_shift=diag_shift, linear_solver_fn = solver), vs
     else:
         print('using regular SR')
-        sr = nk.optimizer.SR(diag_shift=diag_shift, holomorphic=holomorph, qgt=nk.optimizer.qgt.QGTJacobianPyTree())
+        sr = nk.optimizer.SR(diag_shift=diag_shift, holomorphic=holomorph, solver = solver, qgt=nk.optimizer.qgt.QGTJacobianPyTree())
         return nk.VMC(hamiltonian=hamiltonian, optimizer=optimizer, variational_state=vs, preconditioner=sr), vs
 
 
@@ -177,6 +180,75 @@ def grad_norms_callback(step_nr, log_data, driver):
         for k, v in norms.items():
             log_data[f"grad_norms_{k}"] = v
     return True
+
+
+
+""" smooth svd solver from Mattija:"""
+
+# import netket as nk
+import jax.numpy as jnp
+from functools import partial
+import jax
+import numpy as np
+from src.utils import real_dtype, print_mpi
+# import copy
+from netket.jax import tree_ravel
+
+# acond is the diag shift so around 1e-4
+#
+def smooth_svd(Aobj, b, acond=1e-4, rcond=1e-2, exponent=6, x0=None):
+    """
+    Solve the linear system using Singular Value Decomposition.
+    The diagonal shift on the matrix should be 0.
+    Internally uses {ref}`jax.numpy.linalg.lstsq`.
+    Args:
+        A: the matrix A in Ax=b
+        b: the vector b in Ax=b
+        rcond: The condition number
+    """
+    del x0
+
+    A = Aobj.to_dense()
+
+    b, unravel = tree_ravel(b)
+
+    s2, V = jnp.linalg.eigh(A)
+    del A # memory saving
+    
+    b_tilde = V.T.conj() @ b
+
+    svd_reg = _default_reg_fn(s2, rcond=rcond, acond=acond, exponent=exponent)
+
+    cutoff = 10 * jnp.finfo(s2.dtype).eps
+    s2_safe = jnp.maximum(s2, cutoff)
+    reg_inv = svd_reg / s2_safe
+
+    x = V @ (reg_inv * b_tilde)
+    effective_rank = jnp.sum(svd_reg)
+
+    info = {
+        "effective_rank" :  effective_rank,
+        "svd_reg" : svd_reg,
+        "s2" : s2,
+        "max_s2" : jnp.max(s2)
+    }
+        
+    del V # memory saving
+
+    return unravel(x), info
+
+
+def _default_reg_fn(x, rcond, acond, exponent):
+
+    # cutoff = jnp.finfo(real_dtype(x.dtype)).eps
+    cutoff = jnp.finfo(x.dtype).eps
+
+    if acond is not None:
+        cutoff = jnp.maximum(cutoff, acond)
+
+    cutoff = jnp.maximum(cutoff, rcond * jnp.max(x))
+
+    return 1 / (1 + (cutoff / x) ** exponent)
 
 
 

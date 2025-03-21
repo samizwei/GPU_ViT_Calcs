@@ -1,0 +1,6 @@
+VMC optmization for XYZ model on 8x8 Lattice:
+
+for alpha=1,2,4 we use 2**12 samples and chunk_size 2**12
+
+
+for alpha=8 we reducedd samples to 2**10 and chunk_size 2**2
