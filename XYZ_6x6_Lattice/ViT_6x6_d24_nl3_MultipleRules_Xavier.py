@@ -9,8 +9,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from functools import partial
-
 import pickle
 from netket.callbacks import InvalidLossStopping
 import matplotlib.pyplot as plt
@@ -25,8 +23,6 @@ from vmc_2spins_sampler import *
 from Afm_Model_functions import *
 # from ViTmodel_2d_Vers2 import * 
 import ViT_2d_Vers3_XavierUniform as vitX
-
-from Mattija_solver_svd import smooth_svd
 
 from convergence_stopping import LateConvergenceStopping
 # import the sampler choosing between minSR and regular SR
@@ -105,10 +101,10 @@ sa_HaEx7030 = nk.sampler.MetropolisSampler(hi2d, rules7030, n_chains=32, sweep_s
 p_opt = {
     # 'learning_rate': 0.5 * 1e-3,
     # 'learning_rate' : linear_schedule(init_value=1e-3, end_value=1e-4, transition_begin=500, transition_steps=100),
-    'learning_rate' : linear_schedule(init_value=0.5 * 1e-3, end_value=1e-5, transition_begin=300, transition_steps=100),
-
+    # 'learning_rate' : linear_schedule(init_value=0.5 * 1e-3, end_value=1e-5, transition_begin=300, transition_steps=100),
+    'learning_rate' : linear_schedule(init_value=0.5 * 1e-2, end_value = 1e-4, transition_begin=300, transition_steps=200),
     # 'learning_rate': cosine_decay_schedule(init_value=1e-3, decay_steps = 100, alpha = 1e-2),
-    'diag_shift': 0.0,
+    'diag_shift': 1e-4,
     # 'diag_shift': linear_schedule(init_value=1e-4, end_value=1e-3, transition_begin=500, transition_steps=100),
     'n_samples': 2**12,
     'chunk_size': 2**12,
@@ -152,7 +148,6 @@ with open(DataDir + 'good_init_params5050.pickle', 'rb') as f:
 with open(DataDir + 'good_init_params3070.pickle', 'rb') as f:
     good_params.append(pickle.load(f))
 
-svd_solver = partial(smooth_svd, acond=1e-4)
 
 
 for j, sa_key in enumerate(samplers.keys()):
@@ -169,16 +164,16 @@ for j, sa_key in enumerate(samplers.keys()):
 
     gs_Vit, vs_Vit = VMC_SR(hamiltonian=Ha16.to_jax_operator(), sampler=samplers[sa_key], learning_rate=p_opt['learning_rate'], model=m_Vit,
                                             diag_shift=p_opt['diag_shift'], n_samples=p_opt['n_samples'], chunk_size = p_opt['chunk_size'], discards = 16,
-                                            parameters = good_params[j], solver = svd_solver)
+                                            parameters = good_params[j])
                 
-    StateLogger = PickledJsonLog(output_prefix=DataDir + 'log_vit_sampler_{}_smoothsvd'.format(sa_key), save_params_every=10, save_params=True)
+    StateLogger = PickledJsonLog(output_prefix=DataDir + 'log_vit_sampler_{}'.format(sa_key), save_params_every=10, save_params=True)
 
     x,y = np.unique(np.sum(vs_Vit.samples.reshape(-1, L**2), axis=-1)/2, return_counts=True)
     print(x, '\n', y)
     
     gs_Vit.run(out=(log_curr, StateLogger), n_iter=p_opt['n_iter'], callback=[grad_norms_callback, Stopper1, Stopper2])
 
-    log_curr.serialize(DataDir + 'log_vit_sampler_{}_smoothsvd'.format(sa_key)) 
+    log_curr.serialize(DataDir + 'log_vit_sampler_{}'.format(sa_key)) 
         
 
 

@@ -101,8 +101,8 @@ sa_HaEx7030 = nk.sampler.MetropolisSampler(hi2d, rules7030, n_chains=32, sweep_s
 p_opt = {
     # 'learning_rate': 0.5 * 1e-3,
     # 'learning_rate' : linear_schedule(init_value=1e-3, end_value=1e-4, transition_begin=500, transition_steps=100),
-    'learning_rate' : linear_schedule(init_value=0.5 * 1e-3, end_value=1e-5, transition_begin=300, transition_steps=100),
-
+    # 'learning_rate' : linear_schedule(init_value=0.5 * 1e-3, end_value=1e-5, transition_begin=300, transition_steps=100),
+    'learning_rate' : linear_schedule(init_value=0.5 * 1e-2, end_value = 1e-4, transition_begin=300, transition_steps=200),
     # 'learning_rate': cosine_decay_schedule(init_value=1e-3, decay_steps = 100, alpha = 1e-2),
     'diag_shift': 1e-4,
     # 'diag_shift': linear_schedule(init_value=1e-4, end_value=1e-3, transition_begin=500, transition_steps=100),
