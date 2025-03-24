@@ -18,15 +18,12 @@ sys.path.append('/scratch/samiz/GPU_ViT_Calcs/models')
 sys.path.append('/scratch/samiz/GPU_ViT_Calcs/Logger_Pickle')
 
 from json_log import PickledJsonLog
-# from ViT_2d_Vers2_Checkpoint import *
 from vmc_2spins_sampler import *
 from Afm_Model_functions import *
-# from ViTmodel_2d_Vers2 import * 
 import ViT_2d_Vers3_XavierUniform as vitX
 
 from convergence_stopping import LateConvergenceStopping
-# import the sampler choosing between minSR and regular SR
-from optax.schedules import cosine_decay_schedule, linear_schedule
+from optax.schedules import linear_schedule
 
 print(jax.__version__)
 jax.devices()
@@ -70,11 +67,6 @@ pHa = {
 Ha16, hi2d = H_afmJ123(L=pHa['L'], J1=pHa['J1'], J2=pHa['J2'], J3=pHa['J2'], Dxy=pHa['Dxy'], d=pHa['d'], dprime=pHa['dprime'], return_space=True,
                         parity=0., sublattice = None, make_rotation=False, exchange_XY=False)
 
-# print(Ha16.hilbert)
-# Ha16, hi2d = H_afm(L=pHa['L'], J1=pHa['J1'], J2=pHa['J2'], Dxy=pHa['Dxy'], d=pHa['d'], dprime=pHa['dprime'], parity=0, return_space=True, enforce_sz0=False)
-# hi2d = nk.hilbert.Spin(s=0.5, N=L**2, total_sz=0)
-
-# print('E_0 =', nk.exact.lanczos_ed(Ha16, k=1, compute_eigenvectors=False))
 
 XX = Exchange_OP(hi2d, TriGraph).to_jax_operator()
 
@@ -99,13 +91,9 @@ sa_HaEx7030 = nk.sampler.MetropolisSampler(hi2d, rules7030, n_chains=32, sweep_s
 ######################################################################################################################################
 
 p_opt = {
-    # 'learning_rate': 0.5 * 1e-3,
-    # 'learning_rate' : linear_schedule(init_value=1e-3, end_value=1e-4, transition_begin=500, transition_steps=100),
-    # 'learning_rate' : linear_schedule(init_value=0.5 * 1e-3, end_value=1e-5, transition_begin=300, transition_steps=100),
-    'learning_rate' : linear_schedule(init_value=0.5 * 1e-2, end_value = 1e-4, transition_begin=300, transition_steps=200),
-    # 'learning_rate': cosine_decay_schedule(init_value=1e-3, decay_steps = 100, alpha = 1e-2),
+    
+    'learning_rate' : linear_schedule(init_value=0.5 * 1e-2, end_value = 1e-4, transition_begin=600, transition_steps=100),
     'diag_shift': 1e-4,
-    # 'diag_shift': linear_schedule(init_value=1e-4, end_value=1e-3, transition_begin=500, transition_steps=100),
     'n_samples': 2**12,
     'chunk_size': 2**12,
     'n_iter': 700,
@@ -114,7 +102,7 @@ p_opt = {
 pVit = {
     'd': 24,
     'h': 6,
-    'nl': 1,
+    'nl': 2,
     'Dtype': jnp.float64,
     'hidden_density': 1,
     'L': L,
@@ -134,18 +122,18 @@ samplers = {
 
 # print('everything worked so far!!')
 
-DataDir = 'ViT_d24_nl1_MultipleRules_XavierInit/'
+DataDir = 'ViT_d24_nl2_MultipleRules_XavierInit/'
 
 Stopper1 = InvalidLossStopping(monitor = 'mean', patience = 20)
-Stopper2 = LateConvergenceStopping(target = 0.5, monitor = 'variance', patience = 20, start_from_step=100)
+Stopper2 = LateConvergenceStopping(target = 0.001, monitor = 'variance', patience = 20, start_from_step=100)
 
 good_params = []
 # Load all pickle files with 'init' in the name and append their data to good_params
-with open(DataDir + 'good_init_params7030.pickle', 'rb') as f:
+with open(DataDir + 'init_params7030.pickle', 'rb') as f:
     good_params.append(pickle.load(f))
-with open(DataDir + 'good_init_params5050.pickle', 'rb') as f:
+with open(DataDir + 'init_params5050.pickle', 'rb') as f:
     good_params.append(pickle.load(f))
-with open(DataDir + 'good_init_params3070.pickle', 'rb') as f:
+with open(DataDir + 'init_params3070.pickle', 'rb') as f:
     good_params.append(pickle.load(f))
 
 
