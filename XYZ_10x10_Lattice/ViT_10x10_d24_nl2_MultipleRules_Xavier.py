@@ -92,17 +92,17 @@ sa_HaEx7030 = nk.sampler.MetropolisSampler(hi2d, rules7030, n_chains=32, sweep_s
 
 p_opt = {
     
-    'learning_rate' : linear_schedule(init_value=0.5 * 1e-2, end_value = 0.5 * 1e-4, transition_begin=300, transition_steps=300),
+    'learning_rate' : linear_schedule(init_value=0.5 * 1e-2, end_value = 1e-4, transition_begin=600, transition_steps=100),
     'diag_shift': 1e-4,
     'n_samples': 2**12,
     'chunk_size': 2**12,
-    'n_iter': 800,
+    'n_iter': 700,
 }
 
 pVit = {
     'd': 24,
     'h': 6,
-    'nl': 1,
+    'nl': 2,
     'Dtype': jnp.float64,
     'hidden_density': 1,
     'L': L,
@@ -113,7 +113,6 @@ pVit = {
 
 
 samplers = {
-    'HaEx_7030': sa_HaEx7030,
     'HaEx_5050': sa_HaEx5050,
     # 'HaEx_3070': sa_HaEx3070,
     
@@ -122,15 +121,15 @@ samplers = {
 
 # print('everything worked so far!!')
 
-DataDir = 'ViT_d24_nl1_MultipleRules_XavierInit/'
+DataDir = 'ViT_d24_nl2_MultipleRules_XavierInit/'
 
 Stopper1 = InvalidLossStopping(monitor = 'mean', patience = 20)
 Stopper2 = LateConvergenceStopping(target = 0.001, monitor = 'variance', patience = 20, start_from_step=100)
 
 good_params = []
 # Load all pickle files with 'init' in the name and append their data to good_params
-with open(DataDir + 'init_params7030.pickle', 'rb') as f:
-    good_params.append(pickle.load(f))
+# with open(DataDir + 'init_params7030.pickle', 'rb') as f:
+#     good_params.append(pickle.load(f))
 with open(DataDir + 'init_params5050.pickle', 'rb') as f:
     good_params.append(pickle.load(f))
 # with open(DataDir + 'init_params3070.pickle', 'rb') as f:
@@ -163,7 +162,7 @@ for j, sa_key in enumerate(samplers.keys()):
 
     log_curr.serialize(DataDir + 'log_vit_sampler_{}'.format(sa_key)) 
         
-# CUDA_VISIBLE_DEVICES=0,1 python script.py
+
 
 
 
