@@ -1,0 +1,24 @@
+Here we note the calculation times for the optimization:
+
+(all caclulations done on 4 gpu on yoshi itp cluster)
+
+Without Sign Structure:
+
+16 Spins:   with translations symmetry: 11min, Without translations: 11min
+
+64 Spins: with translations 1h
+
+
+100 Spins:  wiht translations 2h
+
+
+
+With sign structure:
+
+16 Spins: wiht trnaslations: 5min,  wihtout translations: 4min
+
+
+64 Spins: with translations: 28mins    without translation: (only 600 iterations) 
+
+
+100 Spins: with translations: 1h    without translation: 1h
