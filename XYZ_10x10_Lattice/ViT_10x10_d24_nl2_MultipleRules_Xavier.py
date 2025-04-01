@@ -96,7 +96,7 @@ p_opt = {
     'diag_shift': 1e-4,
     'n_samples': 2**12,
     'chunk_size': 2**12,
-    'n_iter': 700,
+    'n_iter': 800,
 }
 
 pVit = {
@@ -113,9 +113,9 @@ pVit = {
 
 
 samplers = {
-    'HaEx_5050': sa_HaEx5050,
+    # 'HaEx_5050': sa_HaEx5050,
     # 'HaEx_3070': sa_HaEx3070,
-    
+    'HaEx_7030': sa_HaEx7030,
     # 'Hami':  sa_Ha,
 }
 
@@ -128,10 +128,10 @@ Stopper2 = LateConvergenceStopping(target = 0.001, monitor = 'variance', patienc
 
 good_params = []
 # Load all pickle files with 'init' in the name and append their data to good_params
-# with open(DataDir + 'init_params7030.pickle', 'rb') as f:
-#     good_params.append(pickle.load(f))
-with open(DataDir + 'init_params5050.pickle', 'rb') as f:
+with open(DataDir + 'init_params7030.pickle', 'rb') as f:
     good_params.append(pickle.load(f))
+# with open(DataDir + 'init_params5050.pickle', 'rb') as f:
+#     good_params.append(pickle.load(f))
 # with open(DataDir + 'init_params3070.pickle', 'rb') as f:
 #     good_params.append(pickle.load(f))
 
