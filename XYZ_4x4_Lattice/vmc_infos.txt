@@ -1,0 +1,2 @@
+Here we tried to learn the ground state with rbm 
+where we once implemented spin flip symmetry and once translation symmetry and then tried to learn the groundstate!!
