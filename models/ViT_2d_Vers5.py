@@ -14,7 +14,9 @@ from flax.linen.initializers import xavier_uniform, variance_scaling
 
 
 
-rbm_kernel_init = variance_scaling(scale=0.01, mode= 'fan_in', distribution='truncated_normal')
+rbm_kernel_init = variance_scaling(scale=0.01, mode= 'fan_in', distribution='uniform')
+# rbm_kernel_init = variance_scaling(scale=0.01, mode= 'fan_in', distribution='truncated_normal')
+
 
 transformer_kernel_init = xavier_uniform()
 
@@ -464,7 +466,7 @@ class Vit_2d_full_symm(nn.Module):
 
         if self.recover_full_transl_symm and self.recover_spin_flip_symm:
             # full translation and spin flip symmetry
-            assert self.translations.shape == (self.patch_arr.shape[1], x.shape[-1]), 'wrong shape of translations, has to be (patch_size, number_nodes)'
+            # assert self.translations.shape == (self.patch_arr.shape[1], x.shape[-1]), 'wrong shape of translations, has to be (patch_size, number_nodes)'
         
         
             z = jnp.apply_along_axis(lambda trans_elt: jnp.array([vit2d(x[..., trans_elt]), vit2d((-1)*x[..., trans_elt])]), axis = -1, arr=jnp.asarray(self.translations))
@@ -474,7 +476,7 @@ class Vit_2d_full_symm(nn.Module):
 
 
         elif self.recover_full_transl_symm:
-            assert self.translations.shape == (self.patch_arr.shape[1], x.shape[-1]), 'wrong shape of translations, has to be (patch_size, number_nodes)'
+            # assert self.translations.shape == (self.patch_arr.shape[1], x.shape[-1]), 'wrong shape of translations, has to be (patch_size, number_nodes)'
 
             z_transl = jnp.apply_along_axis(lambda trans_elt: vit2d(x[..., trans_elt]),
                                                  axis = -1,
@@ -487,7 +489,7 @@ class Vit_2d_full_symm(nn.Module):
         
             z_plus = vit2d(x)
             z_minus =  vit2d((-1.)*x)   
-            return logsumexp_cplx(jnp.concatenate([z_plus, z_minus], axis=0), axis=0)
+            return logsumexp_cplx(jnp.array([z_plus, z_minus]), axis=0)
         
 
         else:
