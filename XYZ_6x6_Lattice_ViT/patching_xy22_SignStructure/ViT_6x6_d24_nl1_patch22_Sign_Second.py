@@ -61,11 +61,13 @@ pHa = {
     'Dxy': 0.75,
     'd' : 0.1,
     'dprime' : 0.5,
-    'sublattice': [0,1,2,3,8,9,10,11]
+    'sublattice': [0, 1, 2, 3, 4, 5,
+                   12, 13, 14, 15, 16, 17,
+                   24, 25, 26, 27 ,28, 29]
 }
 
 Ha16, hi2d = H_afmJ123(L=pHa['L'], J1=pHa['J1'], J2=pHa['J2'], J3=pHa['J2'], Dxy=pHa['Dxy'], d=pHa['d'], dprime=pHa['dprime'], return_space=True,
-                        parity=0., sublattice = None, make_rotation=False, exchange_XY=False)
+                        parity=0., sublattice = pHa['sublattice'], make_rotation=True, exchange_XY=True)
 
 
 XX = Exchange_OP(hi2d, TriGraph).to_jax_operator()
@@ -95,7 +97,7 @@ p_opt = {
     # 'learning_rate' : linear_schedule(init_value=0.5 * 1e-2, end_value = 1e-4, transition_begin=300, transition_steps=200),
     # 'learning_rate': cosine_decay_schedule(init_value=1e-3, decay_steps = 100, alpha = 1e-2),
     # 'diag_shift': 1e-4,
-    'diag_shift': linear_schedule(init_value=1e-4, end_value=1e-3, transition_begin=150, transition_steps=100),
+    'diag_shift': linear_schedule(init_value=1e-5, end_value=1e-3, transition_begin=150, transition_steps=100),
     'n_samples': 2**12,
     'chunk_size': 2**12,
     'n_iter': 400,
