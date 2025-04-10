@@ -92,14 +92,14 @@ sa_HaEx7030 = nk.sampler.MetropolisSampler(hi2d, rules7030, n_chains=32, sweep_s
 # lr_schedule = join_schedules(schedules=[warmup_schedule, decay_schedule], boundaries=[50] )
 
 p_opt = {
-    'learning_rate' : linear_schedule(init_value=1e-3, end_value=1e-2, transition_begin=200, transition_steps=100),
-    # 'learning_rate' : linear_schedule(init_value=0.5 * 1e-2, end_value = 1e-4, transition_begin=300, transition_steps=200),
+    # 'learning_rate' : linear_schedule(init_value=1e-3, end_value=1e-2, transition_begin=200, transition_steps=100),
+    'learning_rate' : linear_schedule(init_value= 1e-2, end_value = 1e-4, transition_begin=100, transition_steps=200),
     # 'learning_rate': cosine_decay_schedule(init_value=1e-3, decay_steps = 100, alpha = 1e-2),
-    # 'diag_shift': 1e-4,
-    'diag_shift': linear_schedule(init_value=1e-4, end_value=1e-3, transition_begin=150, transition_steps=100),
+    'diag_shift': 1e-3,
+    # 'diag_shift': linear_schedule(init_value=1e-4, end_value=1e-3, transition_begin=150, transition_steps=100),
     'n_samples': 2**12,
     'chunk_size': 2**12,
-    'n_iter': 400,
+    'n_iter': 300,
 }
 
 pVit = {
@@ -134,11 +134,11 @@ idy = jnp.arange(0,L**2)
 Tx = jnp.roll(idy.reshape(-1,L), shift=1, axis=0).reshape(-1)
 transls = HashableArray(jnp.array([idy, Tx]))
 
-with open('Log_Files/log_vit_sampler_HaEx_5050.pickle', 'rb') as handle:
+with open('Log_Files/log_vit_sampler_HaEx_5050_transflip.pickle', 'rb') as handle:
     ps = pickle.load(handle)
 
 
-gparams = {'params' : {'ViT_2d_0': ps['params']}}
+gparams = ps #{'params' : {'ViT_2d_0': ps['params']}}
 
 
 
@@ -159,7 +159,7 @@ for j, sa_key in enumerate(samplers.keys()):
                                             diag_shift=p_opt['diag_shift'], n_samples=p_opt['n_samples'], chunk_size = p_opt['chunk_size'], discards = 16,
                                             parameters=gparams)
                 
-    StateLogger = PickledJsonLog(output_prefix=DataDir + 'log_vit_sampler_{}_transflip'.format(sa_key), save_params_every=10, save_params=True)
+    StateLogger = PickledJsonLog(output_prefix=DataDir + 'log_vit_sampler_{}_transflip_refined'.format(sa_key), save_params_every=10, save_params=True)
 
     # x,y = np.unique(np.sum(vs_Vit.samples.reshape(-1, L**2), axis=-1)/2, return_counts=True)
     # print(x, '\n', y)
