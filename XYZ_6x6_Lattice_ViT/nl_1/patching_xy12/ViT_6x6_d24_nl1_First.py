@@ -87,7 +87,7 @@ sa_HaEx7030 = nk.sampler.MetropolisSampler(hi2d, rules7030, n_chains=32, sweep_s
 ######################################################################################################################################
 warmup_schedule = linear_schedule(init_value=1e-4, end_value=2*1e-3, transition_steps=50)
 
-decay_schedule = linear_schedule(init_value=2*1e-3, end_value=1e-4, transition_begin=150, transition_steps=100)
+decay_schedule = linear_schedule(init_value=2*1e-3, end_value=1e-4, transition_begin=250, transition_steps=100)
 
 lr_schedule = join_schedules(schedules=[warmup_schedule, decay_schedule], boundaries=[50] )
 
