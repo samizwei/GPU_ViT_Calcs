@@ -1,0 +1,1 @@
+we increased head number to 8 and embedding dimension to 32 since with 4 pathces number of spins > d=24!!

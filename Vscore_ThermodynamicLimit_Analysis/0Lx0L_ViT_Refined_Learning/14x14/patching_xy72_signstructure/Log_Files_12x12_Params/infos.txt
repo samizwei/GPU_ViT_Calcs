@@ -1,0 +1,4 @@
+
+for the log files in here we did the following for the optimization
+
+we randomly initialize the transformer but use the optimized paraemters from the 12x12 case to initilize the parameters of the rbm at the end
