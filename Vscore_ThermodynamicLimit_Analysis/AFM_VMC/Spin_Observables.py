@@ -80,7 +80,7 @@ def Create_Differences(graph):
     return jnp.array(differences)
 
 
-def Create_SpinSpin_Vec(wavefunction, hilbert, graph, get_error=False, make_rotation=False, sublattice=None):
+def Create_SpinSpin_Vec(wavefunction, hilbert, graph, get_error=False, make_rotation=False, sublattice=None, sharding=False):
     """
     input:
     graph: (netket.graph) the graph of the system
@@ -96,7 +96,11 @@ def Create_SpinSpin_Vec(wavefunction, hilbert, graph, get_error=False, make_rota
     errors = []
     for i in range(N_tot):
         for j in range(N_tot):
-            value = wavefunction.expect(SpinSpin(i, j, hilbert, make_rotation=make_rotation, sublattice=sublattice))
+            if sharding:
+                value = wavefunction.expect(SpinSpin(i, j, hilbert, make_rotation=make_rotation, sublattice=sublattice).to_jax_operator())
+            else:
+                value = wavefunction.expect(SpinSpin(i, j, hilbert, make_rotation=make_rotation, sublattice=sublattice))
+                
             spin_spin_vec.append(value.mean)
             if jnp.isnan(value.error_of_mean):
                 errors.append(0.)
