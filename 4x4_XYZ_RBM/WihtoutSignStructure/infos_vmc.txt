@@ -1,0 +1,25 @@
+first we did an optimization with rbm alpha=1,2,4 and even parity sampling with the following specs:
+
+p_opt = {
+    # 'learning_rate': 1e-3,
+    'learning_rate' : linear_schedule(init_value=2e-3, end_value=1e-6, transition_begin=200, transition_steps=150),
+
+    # 'learning_rate' : linear_schedule(init_value=0.5 * 1e-2, end_value=1e-4, transition_begin=80, transition_steps=60),
+    # 'learning_rate': cosine_decay_schedule(init_value=1e-3, decay_steps = 100, alpha = 1e-2),
+    # 'diag_shift': 1e-4,
+    'diag_shift': linear_schedule(init_value=1e-4, end_value=1e-5, transition_begin=250, transition_steps=50),
+    'n_samples': 2**12,
+    'chunk_size': 2**12,
+    'n_iter': 400,
+}
+
+then we used the parameters from before and introduced spinflip and transaltion symmetry with the following specs:
+
+p_opt = {
+    'learning_rate': 1e-2,
+
+    'diag_shift': 1e-3,
+    'n_samples': 2**12,
+    'chunk_size': 2**12,
+    'n_iter': 250,
+}
