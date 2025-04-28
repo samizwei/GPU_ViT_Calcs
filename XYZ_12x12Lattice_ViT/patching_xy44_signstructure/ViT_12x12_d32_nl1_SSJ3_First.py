@@ -1,7 +1,7 @@
 import os
 os.environ['NETKET_EXPERIMENTAL_SHARDING'] = '1'
 os.environ['NETKET_EXPERIMENTAL_FFT_AUTOCORRELATION'] = '1'
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,6,7"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,6,7"
 
 
 import netket as nk
@@ -131,7 +131,7 @@ samplers = {
 # print('everything worked so far!!')
 
 # DataDir = '/scratch/samiz/GPU_ViT_Calcs/XYZ_10x10_Lattice_ViT/patching_xy55/Log_Files/'
-DataDir = 'Log_Files_J3/'
+DataDir = '/scratch/samiz/GPU_ViT_Calcs/XYZ_12x12Lattice_ViT/patching_xy44_signstructure/Log_Files_J3/'
 
 Stopper1 = InvalidLossStopping(monitor = 'mean', patience = 20)
 Stopper2 = LateConvergenceStopping(target = 0.005, monitor = 'variance', patience = 20, start_from_step=100)

@@ -2,17 +2,19 @@
 
 # # Run multiple scripts sequentially on all 8 GPUs
 # export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
-export CUDA_VISIBLE_DEVICES=1,3,6,7
+export CUDA_VISIBLE_DEVICES=1,3
 
-python /scratch/samiz/GPU_ViT_Calcs/XYZ_8x8_Lattice_ViT/patching_xy44_signstructure/ViT_8x8_d24_nl1_SSJ2_Diff_Second.py
+# python /scratch/samiz/GPU_ViT_Calcs/XYZ_8x8_Lattice_ViT/patching_xy44_signstructure/ViT_8x8_d24_nl1_SSJ2_Diff_Second.py
 
 
 
 # python /scratch/samiz/GPU_ViT_Calcs/XYZ_8x8_Lattice_ViT/patching_xy44_signstructure/ViT_8x8_d24_nl1_SSJ3_Second.py
 
-python /scratch/samiz/GPU_ViT_Calcs/XYZ_10x10_Lattice_ViT/patching_xy52_signstructure/ViT_10x10_d32_nl1_SSJ3_First.py
+# python /scratch/samiz/GPU_ViT_Calcs/XYZ_10x10_Lattice_ViT/patching_xy52_signstructure/ViT_10x10_d32_nl1_SSJ3_First.py
 
-python /scratch/samiz/GPU_ViT_Calcs/XYZ_10x10_Lattice_ViT/patching_xy52_signstructure/ViT_10x10_d32_nl1_SSJ3_Second.py
+# python /scratch/samiz/GPU_ViT_Calcs/XYZ_10x10_Lattice_ViT/patching_xy52_signstructure/ViT_10x10_d32_nl1_SSJ3_Second.py
+
+python /scratch/samiz/GPU_ViT_Calcs/XYZ_12x12Lattice_ViT/patching_xy44_signstructure/ViT_12x12_d32_nl1_SSJ3_First.py
 
 python /scratch/samiz/GPU_ViT_Calcs/XYZ_12x12Lattice_ViT/patching_xy44_signstructure/ViT_12x12_d32_nl1_SSJ3_Second.py
 

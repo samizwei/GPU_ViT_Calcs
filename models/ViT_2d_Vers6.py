@@ -589,7 +589,7 @@ class Vit_2d_add_reflection(nn.Module):
 
 
 ######## helper functions #################
-def get_tanslation(Lx, Ly, Ntot, px, py):
+def get_translation(Lx, Ly, Ntot, px, py):
     """
     helper function for ViT
     function to all translation of the lattice where tranlsation in y-direction is done by 2 sites
@@ -614,19 +614,141 @@ def get_tanslation(Lx, Ly, Ntot, px, py):
 
     return transl
 
-        
+import numpy as np
 
-def reflection_middle(arr, L):
-    # insert jnp.arange(0,L**2), L
+def make_first_reflection(arr, L):
+    arr = np.array(arr)
     arr = arr.reshape(-1,L).transpose(1,0)
-    def mirror_center(row):
-        half = len(row) // 2 + 1  # +1 important to really mirror in the middle
-        return jnp.concatenate((row[:half+1][::-1], row[half+1:][::-1]))
 
-    mirrored_rows = jnp.array([mirror_center(row) for row in arr])
+    for j in range(L):
+        i = j //2
+        if j % 2 == 0:
+            copier = np.roll(arr[j], shift=i)
+            # print(copier)
+            # print(copier[-1])
+            # print(copier[0])
+            arr[j,:] = np.roll(np.array([copier[1], copier[0], *(copier[2:])[::-1]]), shift=-i)
+        else:
+            copier = np.roll(arr[j], shift=i)
+            arr[j,:] = np.roll(np.array([copier[0], *(copier[1:])[::-1]]), shift=-i)
+        
+    return arr.transpose(1,0).reshape(-1)
 
-    mirrored_rows = mirrored_rows.transpose(1,0).reshape(-1)
-    return mirrored_rows
+
+def rot180_trans1(arr, L):
+    """
+    rotate lattice by 180 degrees and shift the first row by 1
+    """
+    arr = np.array(arr)
+    arr = np.rot90(arr.reshape(-1,L), k=2)
+    arr = np.roll(arr, shift=-1, axis=1)
+    return arr.reshape(-1)
+
+
+def trans_product(p1, p2, print_calc=False):
+    """
+    Calculate the group product of two elements of the translation group.
+    
+    Args:
+    p1 (np.ndarray): First translation array.
+    p2 (np.ndarray): Second translation array.
+    
+    Returns:
+    np.ndarray: product p2*p1
+    """
+    # Ensure the permutations are numpy arrays
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+    
+    # Calculate the group product
+    product = p2[p1]
+
+    if print_calc:
+        
+        print(p2)
+        print(p1)
+        print("Group product:", product)
+    
+    return product
+
+
+def get_difference(large_array, subset_array):
+    """
+    provides all symmetries except the pure translations:
+    do:
+    symm_arr = nk.graph.Graph(edges = make_colored_edges(L,L)).automorphisms().to_array()
+    get_difference(symm_arr, get_translation)
+    
+    """
+    # Ensure both are 2D arrays
+    large_array = np.asarray(large_array)
+    subset_array = np.asarray(subset_array)
+    
+    # Convert rows to a structured type for comparison
+    dtype = np.dtype((np.void, large_array.dtype.itemsize * large_array.shape[1]))
+    
+    large_view = large_array.view(dtype).ravel()
+    subset_view = subset_array.view(dtype).ravel()
+    
+    # Find indices in large_array that are not in subset_array
+    mask = ~np.isin(large_view, subset_view)
+    
+    return large_array[mask]
+
+
+class reflection_wrapper(nn.Module):
+    reflections: jnp.ndarray
+    model: nn.Module
+
+    @nn.compact
+    def __call__(self,x):
+        x = jnp.apply_along_axis(lambda elt: self.model(x[...,elt]), axis = -1, arr =jnp.asarray(self.reflections))
+
+        x = x.reshape(-1,x.shape[-1])
+        return logsumexp_cplx(x, axis = 0)
+    
+"""
+how to hand over the parameters to the reflection wrapper:
+
+with open('patching_xy22/Log_Files/log_vit_sampler_HaEx_5050_transflip.pickle', 'rb') as f:
+    ps = pickle.load(f)
+
+# Correctly update VMC state
+new_variables = vs_vit_ref.variables.copy()
+new_variables['params']['model'] = ps['params']
+vs_vit_ref.variables = new_variables
+
+# ID = jnp.arange(0, L**2)
+# R = vit.make_first_reflection(ID, L)
+# Glide_Rot = vit.rot180_trans1(ID, L)
+# GRR = trans_product(Glide_Rot, R)
+# arr = jnp.array([ID, R, Glide_Rot, GRR])
+"""     
+
+
+
+def get_difference(large_array, subset_array):
+    """
+    provides all symmetries except the pure translations:
+    do:
+    symm_arr = nk.graph.Graph(edges = make_colored_edges(L,L)).automorphisms().to_array()
+    get_difference(symm_arr, get_translation)
+    
+    """
+    # Ensure both are 2D arrays
+    large_array = np.asarray(large_array)
+    subset_array = np.asarray(subset_array)
+    
+    # Convert rows to a structured type for comparison
+    dtype = np.dtype((np.void, large_array.dtype.itemsize * large_array.shape[1]))
+    
+    large_view = large_array.view(dtype).ravel()
+    subset_view = subset_array.view(dtype).ravel()
+    
+    # Find indices in large_array that are not in subset_array
+    mask = ~np.isin(large_view, subset_view)
+    
+    return large_array[mask]
 
 
 
