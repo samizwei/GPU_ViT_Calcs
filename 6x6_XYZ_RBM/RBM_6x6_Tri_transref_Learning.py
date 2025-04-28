@@ -3,7 +3,7 @@
 import os
 os.environ['NETKET_EXPERIMENTAL_SHARDING'] = '1'
 os.environ['NETKET_EXPERIMENTAL_FFT_AUTOCORRELATION'] = '1'
-os.environ["CUDA_VISIBLE_DEVICES"] = "2,3,4,5"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,6,7"
 # In[ ]:
 
 
@@ -47,7 +47,7 @@ Stopper2 = LateConvergenceStopping(target = 0.001, monitor = 'variance', patienc
 
 
 
-L = 4
+L = 6
 
 # hi2d = nk.hilbert.Spin(s=0.5, N=L**2, constraint=Mtot_Parity_Constraint(parity=0))
 TriGraph = nk.graph.Triangular(extent = [L,L], pbc = True)
@@ -89,7 +89,6 @@ p_opt = {
     'n_iter': 250,
 }
 
-symm_arr = nk.graph.Graph(edges = make_colored_edges(L,L)).automorphisms().to_array()
 
 
 
@@ -108,25 +107,46 @@ class rbm_trans_flip(nn.Module):
 
 alphas = [1.0, 2.0, 4.0]
 
-Id = jnp.arange(0,L**2)
-R = mr.reflection_middle(Id, L)
-refls = HashableArray(jnp.array([Id, R]))
+# # Id = jnp.arange(0,L**2)
+# # R = mr.make_first_reflection(Id, L)
+# # GlideRot = mr.rot180_trans1(Id, L)
+# # GRR = mr.trans_product(GlideRot, R)
+# # refls = HashableArray(jnp.array([Id, R]))
+
+# for j, alpha in enumerate(alphas):
+#     print('current alpha: ', alpha)
+#     with open('/scratch/samiz/GPU_ViT_Calcs/6x6_XYZ_RBM/Log_Files/log_saHaEx5050_rbmtransflip_alpha{}.pickle'.format(np.round(alpha)), 'rb') as handle:
+#         params = pickle.load(handle)
+#     gparams = {'params': {'model': params['params']}}
+
+#     rbm_trans = rbm_trans_flip(translations=HashableArray(mr.get_tanslation(L**2,Lx=L, Ly=L)), alpha=alpha, param_dtype=complex)
+
+#     m_rbm = mr.rbm_rtf(reflections=refls, model=rbm_trans)
+
+#     gs, vs = VMC_SR(hamiltonian=Ha16.to_jax_operator(), sampler = sa_HaEx5050, learning_rate=p_opt['learning_rate'], model =m_rbm, 
+#                     diag_shift = p_opt['diag_shift'], n_samples=p_opt['n_samples'], chunk_size=p_opt['chunk_size'], discards=16, holomorph=True, parameters=gparams)
+
+
+#     StateLogger = PickledJsonLog(output_prefix=path_to_store + 'log_saHaEx5050_rbm_Reflec_transflip_alpha{}'.format(alpha), save_params_every=10, save_params=True)
+
+#     gs.run(n_iter=p_opt['n_iter'], out=StateLogger, callback=[grad_norms_callback, Stopper1, Stopper2]) 
+
+symm_arr = HashableArray(nk.graph.Graph(edges = make_colored_edges(L,L)).automorphisms().to_array())
 
 for j, alpha in enumerate(alphas):
-    print('current alpha: ', alpha)
-    with open('/scratch/samiz/GPU_ViT_Calcs/4x4_XYZ_RBM/WihtoutSignStructure/Log_Files/log_saHaEx5050_rbmtransflip_alpha{}.pickle'.format(np.round(alpha)), 'rb') as handle:
+    print('curren alpha: ', alpha)
+    with open('/scratch/samiz/GPU_ViT_Calcs/6x6_XYZ_RBM/Log_Files/log_saHaEx5050_rbm_alpha{}.pickle'.format(alpha), 'rb') as handle:
         params = pickle.load(handle)
-    gparams = {'params': {'model': params['params']}}
+    
+    gparams = {'params': {'RBM_0': params['params']}}
 
-    rbm_trans = rbm_trans_flip(translations=HashableArray(mr.get_tanslation(L**2,Lx=L, Ly=L)), alpha=alpha, param_dtype=complex)
-
-    m_rbm = mr.rbm_rtf(reflections=refls, model=rbm_trans)
+    m_rbm = rbm_trans_flip(translations=symm_arr, alpha=alpha, param_dtype=complex)
 
     gs, vs = VMC_SR(hamiltonian=Ha16.to_jax_operator(), sampler = sa_HaEx5050, learning_rate=p_opt['learning_rate'], model =m_rbm, 
                     diag_shift = p_opt['diag_shift'], n_samples=p_opt['n_samples'], chunk_size=p_opt['chunk_size'], discards=16, holomorph=True, parameters=gparams)
 
 
-    StateLogger = PickledJsonLog(output_prefix=path_to_store + 'log_saHaEx5050_rbm_Reflec_transflip_alpha{}'.format(alpha), save_params_every=10, save_params=True)
+    StateLogger = PickledJsonLog(output_prefix=path_to_store + 'log_saHaEx5050_FullSymm_alpha{}'.format(alpha), save_params_every=10, save_params=True)
 
     gs.run(n_iter=p_opt['n_iter'], out=StateLogger, callback=[grad_norms_callback, Stopper1, Stopper2]) 
 

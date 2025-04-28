@@ -1,7 +1,7 @@
 import os
 os.environ['NETKET_EXPERIMENTAL_SHARDING'] = '1'
 os.environ['NETKET_EXPERIMENTAL_FFT_AUTOCORRELATION'] = '1'
-# os.environ["CUDA_VISIBLE_DEVICES"] = "2,3"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,6,7"
 
 
 import netket as nk
@@ -21,7 +21,7 @@ sys.path.append('/scratch/samiz/Model')
 from json_log import PickledJsonLog
 from vmc_2spins_sampler import *
 from Afm_Model_functions import *
-import ViT_2d_Vers5 as vit
+import ViT_2d_Vers6 as vit
 
 from convergence_stopping import LateConvergenceStopping
 # import the sampler choosing between minSR and regular SR
@@ -34,7 +34,6 @@ print("Sharding is enabled:", nk.config.netket_experimental_sharding)
 print("The available GPUs are:", jax.devices())
 
 nk.config.netket_random_state_fallback_warning = False
-
 
 
 
@@ -53,7 +52,7 @@ using the learning rate: linear_schedule(init_value=1e-3, end_value=1e-4, transi
 
 ######################################################################################################################################
 # define the sampler, Hamiltonian and grpah
-L = 12
+L = 10
 
 TriGraph = nk.graph.Triangular(extent = [L,L], pbc = True)
 
@@ -64,12 +63,7 @@ pHa = {
     'Dxy': 0.75,
     'd' : 0.1,
     'dprime' : 0.5,
-    'sublattice': [0,1,2,3,4,5,6,7,8,9,10,11,
-                   24,25,26,27,28,29,30,31,32,33,34,35,
-                   48,49,50,51,52,53,54,55,56,57,58,59,
-                   72,73,74,75,76,77,78,79,80,81,82,83,
-                   96,97,98,99,100,101,102,103,104,105,106,107,
-                   120,121,122,123,124,125,126,127,128,129,130,131]
+    'sublattice': sublattice(L)
 }
 
 Ha16, hi2d = H_afmJ123(L=pHa['L'], J1=pHa['J1'], J2=pHa['J2'], J3=pHa['J2'], Dxy=pHa['Dxy'], d=pHa['d'], dprime=pHa['dprime'], return_space=True,
@@ -84,10 +78,11 @@ sa_ex = nk.sampler.MetropolisExchange(hilbert=hi2d, graph=TriGraph, n_chains=32,
 
 rules5050 = nk.sampler.rules.MultipleRules(rules = [sa_Ha.rule, sa_ex.rule], probabilities = [0.5, 0.5])
 
-sa_HaEx5050 = nk.sampler.MetropolisSampler(hi2d, rules5050, n_chains=128, sweep_size=3*hi2d.size)
+sa_HaEx5050 = nk.sampler.MetropolisSampler(hi2d, rules5050, n_chains=64, sweep_size=3*hi2d.size)
 
 
 ######################################################################################################################################
+
 
 p_opt = {
     # 'learning_rate' : lr_schedule,
@@ -107,19 +102,19 @@ pVit = {
     'Dtype': jnp.float64,
     'hidden_density': 1,
     'L': L,
-    'Cx': 4,
-    'Cy': 4,
-    'patch_arr': HashableArray(jnp.array([[0,1,2,3,12,13,14,15,24,25,26,27,36,37,38,39],
-                                          [4,5,6,7,16,17,18,19,28,29,30,31,40,41,42,43],
-                                          [8,9,10,11,20,21,22,23,32,33,34,35,44,45,46,47],
-                                          [48,49,50,51,60,61,62,63,72,73,74,75,84,85,86,87],
-                                          [52,53,54,55,64,65,66,67,76,77,78,79,88,89,90,91],
-                                          [56,57,58,59,68,69,70,71,80,81,82,83,92,93,94,95],
-                                          [96,97,98,99,108,109,110,111,120,121,122,123,132,133,134,135],
-                                          [100,101,102,103,112,113,114,115,124,125,126,127,136,137,138,139],
-                                          [104,105,106,107,116,117,118,119,128,129,130,131,140,141,142,143],
+    'Cx': 5,
+    'Cy': 2,
+    'patch_arr': HashableArray(jnp.array([[0,1,10,11,20,21,30,31,40,41], [2,3,12,13,22,23,32,33,42,43],
+                                         [4,5,14,15,24,25,34,35,44,45], [6,7,16,17,26,27,36,37,46,47],
+                                         [8,9,18,19,28,29,38,39,48,49], [50,51,60,61,70,71,80,81,90,91], 
+                                         [52,53,62,63,72,73,82,83,92,93], [54,55,64,65,74,75,84,85,94,95], 
+                                         [56,57,66,67,76,77,86,87,96,97], [58,59,68,69,78,79,88,89,98,99],
                                          ]))
-
+    
+    # HashableArray(jnp.array([[0,1,2,3,4,10,11,12,13,14,20,21,22,23,24,30,31,32,33,34,40,41,42,43,44],
+    #                                       [50,51,52,53,54,60,61,62,63,64,70,71,72,73,74,80,81,82,83,84,90,91,92,93,94],
+    #                                       [5,6,7,8,9,15,16,17,18,19,25,26,27,28,29,35,36,37,38,39,45,46,47,48,49],
+    #                                       [55,56,57,58,59,65,66,67,68,69,75,76,77,78,79,85,86,87,88,89,95,96,97,98,99]])),
 }
 
 
@@ -132,7 +127,8 @@ samplers = {
 # print('everything worked so far!!')
 
 # DataDir = '/scratch/samiz/GPU_ViT_Calcs/XYZ_10x10_Lattice_ViT/patching_xy55/Log_Files/'
-DataDir = '/scratch/samiz/GPU_ViT_Calcs/XYZ_12x12Lattice_ViT/patching_xy44_signstructure/Log_Files/'
+DataDir = '/scratch/samiz/GPU_ViT_Calcs/XYZ_10x10_Lattice_ViT/patching_xy52_signstructure/Log_Files_J3/'
+# 'Log_Files_J3/'
 
 Stopper1 = InvalidLossStopping(monitor = 'mean', patience = 20)
 Stopper2 = LateConvergenceStopping(target = 0.005, monitor = 'variance', patience = 20, start_from_step=100)
@@ -162,12 +158,12 @@ def get_tanslation(Lx, Ly, Ntot, px, py):
     return transl
 
 patch_transl = HashableArray(get_tanslation(L, L, L**2, pVit['Cx'], pVit['Cy']))
+print('shape of patch translations: ', patch_transl.shape)
 
-with open('/scratch/samiz/GPU_ViT_Calcs/XYZ_12x12Lattice_ViT/patching_xy44_signstructure/Log_Files/log_vit_sampler_HaEx_5050.pickle', 'rb') as f:
+with open('/scratch/samiz/GPU_ViT_Calcs/XYZ_10x10_Lattice_ViT/patching_xy52_signstructure/Log_Files_J3/log_vit_sampler_HaEx_5050.pickle', 'rb') as f:
     ps = pickle.load(f)
 
 gparams = {'params' : {'ViT_2d_0': ps['params']}}
-
 
 for j, sa_key in enumerate(samplers.keys()):
 #     for _, dshift in enumerate(dshifts):

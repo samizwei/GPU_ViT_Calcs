@@ -1,7 +1,7 @@
 import os
 os.environ['NETKET_EXPERIMENTAL_SHARDING'] = '1'
 os.environ['NETKET_EXPERIMENTAL_FFT_AUTOCORRELATION'] = '1'
-# os.environ["CUDA_VISIBLE_DEVICES"] = "2,3"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,6,7"
 
 
 import netket as nk
@@ -18,6 +18,7 @@ import sys
 # sys.path.append('/scratch/samiz/GPU_ViT_Calcs/models')
 # sys.path.append('/scratch/samiz/GPU_ViT_Calcs/Logger_Pickle')
 sys.path.append('/scratch/samiz/Model')
+
 from json_log import PickledJsonLog
 from vmc_2spins_sampler import *
 from Afm_Model_functions import *
@@ -64,12 +65,7 @@ pHa = {
     'Dxy': 0.75,
     'd' : 0.1,
     'dprime' : 0.5,
-    'sublattice': [0,1,2,3,4,5,6,7,8,9,10,11,
-                   24,25,26,27,28,29,30,31,32,33,34,35,
-                   48,49,50,51,52,53,54,55,56,57,58,59,
-                   72,73,74,75,76,77,78,79,80,81,82,83,
-                   96,97,98,99,100,101,102,103,104,105,106,107,
-                   120,121,122,123,124,125,126,127,128,129,130,131]
+    'sublattice': sublattice(L)
 }
 
 Ha16, hi2d = H_afmJ123(L=pHa['L'], J1=pHa['J1'], J2=pHa['J2'], J3=pHa['J2'], Dxy=pHa['Dxy'], d=pHa['d'], dprime=pHa['dprime'], return_space=True,
@@ -132,7 +128,7 @@ samplers = {
 # print('everything worked so far!!')
 
 # DataDir = '/scratch/samiz/GPU_ViT_Calcs/XYZ_10x10_Lattice_ViT/patching_xy55/Log_Files/'
-DataDir = '/scratch/samiz/GPU_ViT_Calcs/XYZ_12x12Lattice_ViT/patching_xy44_signstructure/Log_Files/'
+DataDir = '/scratch/samiz/GPU_ViT_Calcs/XYZ_12x12Lattice_ViT/patching_xy44_signstructure/Log_Files_J3/'
 
 Stopper1 = InvalidLossStopping(monitor = 'mean', patience = 20)
 Stopper2 = LateConvergenceStopping(target = 0.005, monitor = 'variance', patience = 20, start_from_step=100)
@@ -163,7 +159,7 @@ def get_tanslation(Lx, Ly, Ntot, px, py):
 
 patch_transl = HashableArray(get_tanslation(L, L, L**2, pVit['Cx'], pVit['Cy']))
 
-with open('/scratch/samiz/GPU_ViT_Calcs/XYZ_12x12Lattice_ViT/patching_xy44_signstructure/Log_Files/log_vit_sampler_HaEx_5050.pickle', 'rb') as f:
+with open('/scratch/samiz/GPU_ViT_Calcs/XYZ_12x12Lattice_ViT/patching_xy44_signstructure/Log_Files_J3/log_vit_sampler_HaEx_5050.pickle', 'rb') as f:
     ps = pickle.load(f)
 
 gparams = {'params' : {'ViT_2d_0': ps['params']}}

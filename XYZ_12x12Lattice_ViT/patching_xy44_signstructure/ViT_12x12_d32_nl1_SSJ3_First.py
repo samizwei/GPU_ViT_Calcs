@@ -1,7 +1,7 @@
 import os
 os.environ['NETKET_EXPERIMENTAL_SHARDING'] = '1'
 os.environ['NETKET_EXPERIMENTAL_FFT_AUTOCORRELATION'] = '1'
-# os.environ["CUDA_VISIBLE_DEVICES"] = "2,3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,6,7"
 
 
 import netket as nk
@@ -21,7 +21,7 @@ sys.path.append('/scratch/samiz/Model')
 from json_log import PickledJsonLog
 from vmc_2spins_sampler import *
 from Afm_Model_functions import *
-import ViT_2d_Vers5 as vit
+import ViT_2d_Vers6 as vit
 
 from convergence_stopping import LateConvergenceStopping
 # import the sampler choosing between minSR and regular SR
@@ -33,9 +33,8 @@ jax.devices()
 print("Sharding is enabled:", nk.config.netket_experimental_sharding)
 print("The available GPUs are:", jax.devices())
 
+
 nk.config.netket_random_state_fallback_warning = False
-
-
 
 
 
@@ -64,12 +63,7 @@ pHa = {
     'Dxy': 0.75,
     'd' : 0.1,
     'dprime' : 0.5,
-    'sublattice': [0,1,2,3,4,5,6,7,8,9,10,11,
-                   24,25,26,27,28,29,30,31,32,33,34,35,
-                   48,49,50,51,52,53,54,55,56,57,58,59,
-                   72,73,74,75,76,77,78,79,80,81,82,83,
-                   96,97,98,99,100,101,102,103,104,105,106,107,
-                   120,121,122,123,124,125,126,127,128,129,130,131]
+    'sublattice': sublattice(L)
 }
 
 Ha16, hi2d = H_afmJ123(L=pHa['L'], J1=pHa['J1'], J2=pHa['J2'], J3=pHa['J2'], Dxy=pHa['Dxy'], d=pHa['d'], dprime=pHa['dprime'], return_space=True,
@@ -88,16 +82,21 @@ sa_HaEx5050 = nk.sampler.MetropolisSampler(hi2d, rules5050, n_chains=128, sweep_
 
 
 ######################################################################################################################################
+warmup_schedule = linear_schedule(init_value=1e-5, end_value=2*1e-3, transition_steps=50)
+
+decay_schedule = linear_schedule(init_value=2*1e-3, end_value=1e-5, transition_begin=200, transition_steps=200)
+
+lr_schedule = join_schedules(schedules=[warmup_schedule, decay_schedule], boundaries=[50] )
 
 p_opt = {
-    # 'learning_rate' : lr_schedule,
-    'learning_rate' : linear_schedule(init_value=1e-4, end_value = 1e-6, transition_begin=0, transition_steps=200),
+    'learning_rate' : lr_schedule,
+    # 'learning_rate' : linear_schedule(init_value=0.5 * 1e-2, end_value = 1e-4, transition_begin=300, transition_steps=200),
     # 'learning_rate': cosine_decay_schedule(init_value=1e-3, decay_steps = 100, alpha = 1e-2),
-    # 'diag_shift': 1e-4,
-    'diag_shift': linear_schedule(init_value=1e-4, end_value=1e-5, transition_begin=100, transition_steps=100),
+    'diag_shift': 1e-4,
+    # 'diag_shift': linear_schedule(init_value=1e-4, end_value=1e-5, transition_begin=150, transition_steps=400),
     'n_samples': 2**12,
     'chunk_size': 2**12,
-    'n_iter': 200,
+    'n_iter': 500,
 }
 
 pVit = {
@@ -132,41 +131,11 @@ samplers = {
 # print('everything worked so far!!')
 
 # DataDir = '/scratch/samiz/GPU_ViT_Calcs/XYZ_10x10_Lattice_ViT/patching_xy55/Log_Files/'
-DataDir = '/scratch/samiz/GPU_ViT_Calcs/XYZ_12x12Lattice_ViT/patching_xy44_signstructure/Log_Files/'
+DataDir = 'Log_Files_J3/'
 
 Stopper1 = InvalidLossStopping(monitor = 'mean', patience = 20)
 Stopper2 = LateConvergenceStopping(target = 0.005, monitor = 'variance', patience = 20, start_from_step=100)
 
-def get_tanslation(Lx, Ly, Ntot, px, py):
-    """
-    function to all translation of the lattice where tranlsation in y-direction is done by 2 sites
-    px, py are the sizes of the patch 
-
-    return: translations of whole lattice restricted to patch
-    """
-
-    assert Ntot == Lx * Ly, "The number of lattice nodes must be equal to the product of the number of lattice sites in x and y direction."
-
-    nodes = jnp.arange(0, Ntot)
-    transl = []
-
-    for i in range(px):
-        for j in range(0,py, 2):
-            transl.append(jnp.roll(nodes.reshape(-1, Ly), shift=j, axis=1).reshape(-1)) #translations in y direction jnp.roll(nodes, shift=, axis=0)
-        
-        nodes = jnp.roll(nodes, shift=Ly, axis=0) #translations in x direction
-
-    transl = jnp.array(transl)
-    assert transl.shape[0] == px * py / 2
-
-    return transl
-
-patch_transl = HashableArray(get_tanslation(L, L, L**2, pVit['Cx'], pVit['Cy']))
-
-with open('/scratch/samiz/GPU_ViT_Calcs/XYZ_12x12Lattice_ViT/patching_xy44_signstructure/Log_Files/log_vit_sampler_HaEx_5050.pickle', 'rb') as f:
-    ps = pickle.load(f)
-
-gparams = {'params' : {'ViT_2d_0': ps['params']}}
 
 
 for j, sa_key in enumerate(samplers.keys()):
@@ -175,17 +144,16 @@ for j, sa_key in enumerate(samplers.keys()):
     print('curr sampler:', samplers[sa_key])
 
 #                 # define the model
-    m_Vit = vit.Vit_2d_full_symm(patch_arr=HashableArray(pVit['patch_arr']), embed_dim=pVit['d'], num_heads=pVit['h'], nl=pVit['nl'],
-                                Dtype=pVit['Dtype'], L=pVit['L'], Cx=pVit['Cx'], Cy=pVit['Cy'], hidden_density=pVit['hidden_density'],
-                                recover_full_transl_symm=True, translations = patch_transl, recover_spin_flip_symm=True)
+    m_Vit = vit.ViT_2d(patch_arr=HashableArray(pVit['patch_arr']), embed_dim=pVit['d'], num_heads=pVit['h'], nl=pVit['nl'],
+                                Dtype=pVit['Dtype'], L=pVit['L'], Cx=pVit['Cx'], Cy=pVit['Cy'], hidden_density=pVit['hidden_density'])
+                
     
     log_curr = nk.logging.RuntimeLog()
 
     gs_Vit, vs_Vit = VMC_SR(hamiltonian=Ha16.to_jax_operator(), sampler=samplers[sa_key], learning_rate=p_opt['learning_rate'], model=m_Vit,
-                                            diag_shift=p_opt['diag_shift'], n_samples=p_opt['n_samples'], chunk_size = p_opt['chunk_size'], discards = 16,
-                                            parameters = gparams)
+                                            diag_shift=p_opt['diag_shift'], n_samples=p_opt['n_samples'], chunk_size = p_opt['chunk_size'], discards = 16)
                 
-    StateLogger = PickledJsonLog(output_prefix=DataDir + 'log_vit_sampler_{}_transflip'.format(sa_key), save_params_every=10, save_params=True)
+    StateLogger = PickledJsonLog(output_prefix=DataDir + 'log_vit_sampler_{}'.format(sa_key), save_params_every=10, save_params=True)
 
     # x,y = np.unique(np.sum(vs_Vit.samples.reshape(-1, L**2), axis=-1)/2, return_counts=True)
     # print(x, '\n', y)
