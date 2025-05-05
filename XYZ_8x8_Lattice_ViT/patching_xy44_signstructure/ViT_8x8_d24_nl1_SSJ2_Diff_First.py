@@ -1,7 +1,7 @@
 import os
 os.environ['NETKET_EXPERIMENTAL_SHARDING'] = '1'
 os.environ['NETKET_EXPERIMENTAL_FFT_AUTOCORRELATION'] = '1'
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,6,7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
 
 import netket as nk
@@ -63,9 +63,13 @@ pHa = {
     'Dxy': 0.75,
     'd' : 0.1,
     'dprime' : 0.5,
-    'sublattice': [0,2,4,6,9,11,13,15,16,18,20,22,25,27,29,31,
-                   32,34,36,38,41,43,45,47,48,50,52,54,57,59,61,63]
-                
+    # 'sublattice': [0,2,4,6,9,11,13,15,16,18,20,22,25,27,29,31,
+    #                32,34,36,38,41,43,45,47,48,50,52,54,57,59,61,63]
+    'sublattice': [0,2,3,4,5,6,7,9,
+                   16,18,19,20,21,22,23, 25,
+                   32,34,35,36,37,38,39,41,
+                     48,50,51,52,53,54,55,57]
+            
 }
 
 Ha16, hi2d = H_afmJ123(L=pHa['L'], J1=pHa['J1'], J2=pHa['J2'], J3=pHa['J2'], Dxy=pHa['Dxy'], d=pHa['d'], dprime=pHa['dprime'], return_space=True,
@@ -125,7 +129,8 @@ samplers = {
 
 # print('everything worked so far!!')
 
-DataDir = '/scratch/samiz/GPU_ViT_Calcs/XYZ_8x8_Lattice_ViT/patching_xy44_signstructure/Log_Files_J2_Diff/'
+# DataDir = '/scratch/samiz/GPU_ViT_Calcs/XYZ_8x8_Lattice_ViT/patching_xy44_signstructure/Log_Files_J2_Diff/'
+DataDir = '/scratch/samiz/GPU_ViT_Calcs/XYZ_8x8_Lattice_ViT/patching_xy44_signstructure/Log_Files_J2_Diff2/'
 # '/scratch/samiz/GPU_ViT_Calcs/XYZ_8x8_Lattice_ViT/patching_xy44_signstructure/Log_Files_J2_Diff/'
 
 Stopper1 = InvalidLossStopping(monitor = 'mean', patience = 20)
